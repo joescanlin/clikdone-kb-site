@@ -13,139 +13,449 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      line-height: 1.6;
-      color: #333;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
+      background: linear-gradient(135deg, #0F3D5C 0%, #1a5a7a 100%);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 1400px;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 0 60px rgba(0,0,0,0.3);
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0F3D5C 0%, #2FAF7D 100%);
+      color: white;
+      padding: 30px 40px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 15px;
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.95;
+    }
+
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 30px;
+      background: #f8f9fa;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
       padding: 20px;
-    }
-
-    .container {
-      max-width: 800px;
       background: white;
-      border-radius: 20px;
-      padding: 60px 40px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 3rem;
-      color: #0F3D5C;
+      border-radius: 16px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.05);
       margin-bottom: 20px;
-      font-weight: 700;
     }
 
-    .subtitle {
-      font-size: 1.3rem;
-      color: #666;
-      margin-bottom: 40px;
+    .message {
+      margin-bottom: 24px;
+      animation: fadeIn 0.3s ease-in;
     }
 
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 30px;
-      margin-top: 50px;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      text-align: right;
+    }
+
+    .message.bot {
       text-align: left;
     }
 
-    .feature {
+    .message-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .message.user .message-label {
+      color: #0F3D5C;
+    }
+
+    .message.bot .message-label {
+      color: #2FAF7D;
+    }
+
+    .message-bubble {
+      display: inline-block;
+      padding: 16px 24px;
+      border-radius: 16px;
+      max-width: 80%;
+      word-wrap: break-word;
+      line-height: 1.6;
+      font-size: 1rem;
+    }
+
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, #0F3D5C 0%, #1a5a7a 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.bot .message-bubble {
+      background: #f0f0f0;
+      color: #333;
+      border-bottom-left-radius: 4px;
+    }
+
+    .citations {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: #e8f5e9;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: #2e7d32;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 12px;
+      padding: 0 20px 20px 20px;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+    }
+
+    #chat-input {
+      width: 100%;
+      padding: 18px 24px;
+      border: 2px solid #e0e0e0;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    #chat-input:focus {
+      outline: none;
+      border-color: #2FAF7D;
+      box-shadow: 0 0 0 4px rgba(47, 175, 125, 0.1);
+    }
+
+    #send-btn {
+      padding: 18px 40px;
+      background: linear-gradient(135deg, #2FAF7D 0%, #26a069 100%);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(47, 175, 125, 0.3);
+    }
+
+    #send-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(47, 175, 125, 0.4);
+    }
+
+    #send-btn:active {
+      transform: translateY(0);
+    }
+
+    .welcome {
+      text-align: center;
+      padding: 60px 40px;
+      color: #666;
+    }
+
+    .welcome h2 {
+      font-size: 1.8rem;
+      color: #0F3D5C;
+      margin-bottom: 16px;
+    }
+
+    .welcome-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .welcome-card {
       padding: 20px;
       background: #f8f9fa;
-      border-radius: 10px;
-      transition: transform 0.2s;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 2px solid transparent;
     }
 
-    .feature:hover {
-      transform: translateY(-5px);
+    .welcome-card:hover {
+      transform: translateY(-4px);
+      border-color: #2FAF7D;
+      box-shadow: 0 4px 12px rgba(47, 175, 125, 0.2);
     }
 
-    .feature h3 {
-      color: #0F3D5C;
-      margin-bottom: 10px;
-      font-size: 1.2rem;
-    }
-
-    .feature p {
-      color: #666;
-      font-size: 0.95rem;
-    }
-
-    .cta {
-      margin-top: 40px;
-      padding: 20px;
-      background: #2FAF7D;
-      color: white;
-      border-radius: 10px;
+    .welcome-card h3 {
       font-size: 1.1rem;
+      color: #0F3D5C;
+      margin-bottom: 8px;
     }
 
-    .cta strong {
-      display: block;
-      font-size: 1.3rem;
-      margin-bottom: 10px;
-    }
-
-    footer {
-      margin-top: 60px;
-      padding-top: 30px;
-      border-top: 1px solid #eee;
-      color: #999;
+    .welcome-card p {
       font-size: 0.9rem;
+      color: #666;
     }
 
-    @media (max-width: 600px) {
-      h1 {
-        font-size: 2rem;
+    .typing {
+      display: inline-block;
+      padding: 16px 24px;
+    }
+
+    .typing span {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin: 0 2px;
+      background: #2FAF7D;
+      border-radius: 50%;
+      animation: typing 1.4s infinite;
+    }
+
+    .typing span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-10px); }
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 1.8rem;
       }
-      .subtitle {
-        font-size: 1.1rem;
+      .message-bubble {
+        max-width: 90%;
       }
-      .container {
-        padding: 40px 20px;
+      .welcome-cards {
+        grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🤖 ClikDone AI Assistant</h1>
-    <p class="subtitle">Get instant answers about domains, billing, orders, and more</p>
-
-    <div class="features">
-      <div class="feature">
-        <h3>⚡ Instant Answers</h3>
-        <p>Ask questions and get immediate responses powered by our knowledge base</p>
-      </div>
-      <div class="feature">
-        <h3>📚 Comprehensive Help</h3>
-        <p>Access detailed guides on products, pricing, and platform features</p>
-      </div>
-      <div class="feature">
-        <h3>🔒 Secure & Private</h3>
-        <p>Your conversations are encrypted and processed securely</p>
-      </div>
+  <div class="chat-container">
+    <div class="header">
+      <h1>
+        <span>🤖</span>
+        ClikDone AI Assistant
+      </h1>
+      <p>Your intelligent partner for product insights, content creation, and platform guidance</p>
     </div>
 
-    <div class="cta">
-      <strong>Try it now!</strong>
-      Click the "Ask ClikDone" button in the bottom right corner to start chatting with our AI assistant
-    </div>
+    <div class="chat-area">
+      <div class="messages" id="messages">
+        <div class="welcome">
+          <h2>How can I help you today?</h2>
+          <p>Ask me anything about ClikDone, or request help creating content for your business</p>
+          <div class="welcome-cards">
+            <div class="welcome-card" onclick="askQuestion('How do I create a product?')">
+              <h3>📦 Products</h3>
+              <p>Learn to create products with options and pricing</p>
+            </div>
+            <div class="welcome-card" onclick="askQuestion('Help me create a service menu for a cleaning company')">
+              <h3>✨ Content Creation</h3>
+              <p>Generate product menus and marketing copy</p>
+            </div>
+            <div class="welcome-card" onclick="askQuestion('How do plan entitlements work?')">
+              <h3>💳 Plans & Billing</h3>
+              <p>Understand pricing, features, and limits</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <footer>
-      <p>Powered by ClikDone RAG Bot | Built with OpenAI & Qdrant</p>
-    </footer>
+      <div class="input-area">
+        <div class="input-wrapper">
+          <input
+            type="text"
+            id="chat-input"
+            placeholder="Ask a question or request help creating content..."
+            autocomplete="off"
+          />
+        </div>
+        <button id="send-btn">Send</button>
+      </div>
+    </div>
   </div>
 
-  <!-- ClikDone AI Widget -->
   <script>
-    window.CLIKDONEAI_API_BASE = "https://clikdone-kb.onrender.com";
-    window.CLIKDONEAI_PUBLIC_KEY = "public-browser-key-1";
+    const API_BASE = "https://clikdone-kb.onrender.com";
+    const API_KEY = "public-browser-key-1";
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+
+    let isFirstMessage = true;
+
+    function clearWelcome() {
+      if (isFirstMessage) {
+        messages.innerHTML = '';
+        isFirstMessage = false;
+      }
+    }
+
+    function addMessage(text, type) {
+      clearWelcome();
+      const msg = document.createElement('div');
+      msg.className = `message ${type}`;
+
+      const label = document.createElement('div');
+      label.className = 'message-label';
+      label.textContent = type === 'user' ? 'You' : 'ClikDone AI';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble';
+      bubble.textContent = text;
+
+      msg.appendChild(label);
+      msg.appendChild(bubble);
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+
+      return bubble;
+    }
+
+    function addTypingIndicator() {
+      clearWelcome();
+      const msg = document.createElement('div');
+      msg.className = 'message bot';
+      msg.id = 'typing-indicator';
+
+      const label = document.createElement('div');
+      label.className = 'message-label';
+      label.textContent = 'ClikDone AI';
+
+      const typing = document.createElement('div');
+      typing.className = 'typing';
+      typing.innerHTML = '<span></span><span></span><span></span>';
+
+      msg.appendChild(label);
+      msg.appendChild(typing);
+      messages.appendChild(msg);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typing-indicator');
+      if (indicator) indicator.remove();
+    }
+
+    async function askQuestion(question) {
+      input.value = '';
+      addMessage(question, 'user');
+      addTypingIndicator();
+
+      try {
+        const response = await fetch(`${API_BASE}/chat/stream`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY
+          },
+          body: JSON.stringify({ question })
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        removeTypingIndicator();
+        const botMsg = addMessage('', 'bot');
+        let fullText = '';
+        let citations = null;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n\n');
+
+          for (const line of lines) {
+            if (!line.startsWith('data:')) continue;
+            const data = line.replace(/^data:\s*/, '');
+            if (data === '[DONE]') break;
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.citations) {
+                citations = parsed.citations;
+              } else if (parsed.token) {
+                fullText += parsed.token;
+                botMsg.textContent = fullText;
+                messages.scrollTop = messages.scrollHeight;
+              }
+            } catch (e) {}
+          }
+        }
+
+        if (citations && citations.length > 0) {
+          const citeDiv = document.createElement('div');
+          citeDiv.className = 'citations';
+          const citeText = citations.slice(0, 3)
+            .map(c => `§${c.section}`)
+            .join(' • ');
+          citeDiv.textContent = `📚 Sources: ${citeText}`;
+          botMsg.parentElement.appendChild(citeDiv);
+        }
+
+      } catch (error) {
+        removeTypingIndicator();
+        addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const question = input.value.trim();
+      if (question) askQuestion(question);
+    });
+
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        const question = input.value.trim();
+        if (question) askQuestion(question);
+      }
+    });
   </script>
-  <script async src="https://clikdone-kb.onrender.com/public/widget.js"></script>
 </body>
 </html>
