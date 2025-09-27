@@ -369,6 +369,7 @@
     </div>
 
     <div class="chat-area">
+      <div id="debug" style="position:fixed;top:10px;left:10px;background:yellow;padding:8px;font-size:11px;max-width:400px;z-index:999999;border:2px solid red;font-family:monospace;"></div>
       <div class="messages" id="messages">
         <div class="welcome">
           <h2>How can I help you today?</h2>
@@ -410,8 +411,21 @@
     const messages = document.getElementById('messages');
     const input = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
+    const debugEl = document.getElementById('debug');
 
     let isFirstMessage = true;
+    let debugMsgs = [];
+
+    function debug(msg) {
+      debugMsgs.push(msg);
+      if (debugEl) {
+        debugEl.innerHTML = debugMsgs.slice(-15).join('<br>');
+      }
+      console.log(msg);
+    }
+
+    debug('Script loaded. marked=' + (typeof marked));
+    debug('API_BASE=' + API_BASE);
 
     function clearWelcome() {
       if (isFirstMessage) {
@@ -499,7 +513,7 @@
       addTypingIndicator();
 
       try {
-        console.log('[CHAT] Sending request...');
+        debug('Sending request');
         const response = await fetch(`${API_BASE}/chat/stream`, {
           method: 'POST',
           headers: {
@@ -509,7 +523,7 @@
           body: JSON.stringify({ question })
         });
 
-        console.log('[CHAT] Response status:', response.status);
+        debug('Status: ' + response.status);
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -520,6 +534,7 @@
 
         removeTypingIndicator();
         const { bubble: botMsg, container: msgContainer } = addMessage('', 'bot', false);
+        debug('Bot bubble created');
 
         let fullText = '';
         let citations = null;
@@ -527,11 +542,11 @@
         let lastRenderTime = Date.now();
         let tokenCount = 0;
 
-        console.log('[CHAT] Starting stream read...');
+        debug('Starting stream');
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
-            console.log('[CHAT] Stream complete. Total tokens:', tokenCount);
+            debug('Stream done. Tokens: ' + tokenCount);
             break;
           }
 
@@ -549,12 +564,13 @@
               const parsed = JSON.parse(data);
               if (parsed.citations) {
                 citations = parsed.citations;
+                debug('Citations: ' + citations.length);
               } else if (parsed.token) {
                 fullText += parsed.token;
                 tokenCount++;
 
                 if (tokenCount === 1) {
-                  console.log('[CHAT] First token received');
+                  debug('First token!');
                 }
 
                 // Render markdown every 50ms for smooth streaming
@@ -567,15 +583,19 @@
                       botMsg.textContent = fullText;
                     }
                   } catch (e) {
-                    console.error('[CHAT] Streaming markdown error:', e);
+                    debug('MD error: ' + e.message);
                     botMsg.textContent = fullText;
                   }
                   lastRenderTime = now;
                   messages.scrollTop = messages.scrollHeight;
+
+                  if (tokenCount % 50 === 0) {
+                    debug('Tokens: ' + tokenCount);
+                  }
                 }
               }
             } catch (e) {
-              console.error('Parse error:', e);
+              debug('Parse error: ' + e.message);
             }
           }
         }
@@ -607,11 +627,13 @@
         }
 
       } catch (error) {
-        console.error('Chat error:', error);
+        debug('ERROR: ' + error.message);
         removeTypingIndicator();
         addMessage(`Error: ${error.message}. Please try again.`, 'bot');
       }
     }
+
+    debug('Ready');
 
     sendBtn.addEventListener('click', () => {
       const question = input.value.trim();
