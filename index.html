@@ -396,6 +396,10 @@
           body: JSON.stringify({ question })
         });
 
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
@@ -403,18 +407,22 @@
         const botMsg = addMessage('', 'bot');
         let fullText = '';
         let citations = null;
+        let buffer = '';
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n\n');
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n\n');
+
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
-            if (!line.startsWith('data:')) continue;
-            const data = line.replace(/^data:\s*/, '');
+            if (!line.trim() || !line.startsWith('data:')) continue;
+            const data = line.replace(/^data:\s*/, '').trim();
             if (data === '[DONE]') break;
+            if (!data) continue;
 
             try {
               const parsed = JSON.parse(data);
@@ -425,7 +433,9 @@
                 botMsg.textContent = fullText;
                 messages.scrollTop = messages.scrollHeight;
               }
-            } catch (e) {}
+            } catch (e) {
+              console.error('Parse error:', e, 'Data:', data);
+            }
           }
         }
 
@@ -440,8 +450,9 @@
         }
 
       } catch (error) {
+        console.error('Chat error:', error);
         removeTypingIndicator();
-        addMessage('Sorry, I encountered an error. Please try again.', 'bot');
+        addMessage(`Error: ${error.message}. Please try again.`, 'bot');
       }
     }
 
