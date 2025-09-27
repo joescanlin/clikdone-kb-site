@@ -432,8 +432,13 @@
       const bubble = document.createElement('div');
       bubble.className = 'message-bubble';
 
-      if (isMarkdown && type === 'bot') {
-        bubble.innerHTML = marked.parse(text);
+      if (isMarkdown && type === 'bot' && typeof marked !== 'undefined') {
+        try {
+          bubble.innerHTML = marked.parse(text);
+        } catch (e) {
+          console.error('Markdown parsing error:', e);
+          bubble.textContent = text;
+        }
       } else {
         bubble.textContent = text;
       }
@@ -541,7 +546,16 @@
                 // Render markdown every 50ms for smooth streaming
                 const now = Date.now();
                 if (now - lastRenderTime > 50) {
-                  botMsg.innerHTML = marked.parse(fullText);
+                  try {
+                    if (typeof marked !== 'undefined') {
+                      botMsg.innerHTML = marked.parse(fullText);
+                    } else {
+                      botMsg.textContent = fullText;
+                    }
+                  } catch (e) {
+                    console.error('Streaming markdown error:', e);
+                    botMsg.textContent = fullText;
+                  }
                   lastRenderTime = now;
                   messages.scrollTop = messages.scrollHeight;
                 }
@@ -553,7 +567,16 @@
         }
 
         // Final render with complete text
-        botMsg.innerHTML = marked.parse(fullText);
+        try {
+          if (typeof marked !== 'undefined') {
+            botMsg.innerHTML = marked.parse(fullText);
+          } else {
+            botMsg.textContent = fullText;
+          }
+        } catch (e) {
+          console.error('Final markdown render error:', e);
+          botMsg.textContent = fullText;
+        }
         messages.scrollTop = messages.scrollHeight;
 
         // Add copy button
