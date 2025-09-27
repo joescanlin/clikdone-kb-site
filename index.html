@@ -430,6 +430,7 @@
         let buffer = '';
         let tokenCount = 0;
 
+        let chunkCount = 0;
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
@@ -437,13 +438,27 @@
             break;
           }
 
-          buffer += decoder.decode(value, { stream: true });
+          chunkCount++;
+          const chunk = decoder.decode(value, { stream: true });
+          if (chunkCount === 1) {
+            debug(`First chunk (${chunk.length} bytes): ${chunk.substring(0, 100)}`);
+          }
+
+          buffer += chunk;
           const lines = buffer.split('\n\n');
+
+          if (chunkCount <= 2) {
+            debug(`Lines after split: ${lines.length}`);
+          }
 
           buffer = lines.pop() || '';
 
           for (const line of lines) {
-            if (!line.trim() || !line.startsWith('data:')) continue;
+            if (!line.trim()) continue;
+            if (!line.startsWith('data:')) {
+              debug(`Skip non-data line: ${line.substring(0, 50)}`);
+              continue;
+            }
             const data = line.replace(/^data:\s*/, '').trim();
             if (data === '[DONE]') break;
             if (!data) continue;
