@@ -387,6 +387,9 @@
       addTypingIndicator();
 
       try {
+        console.log('Sending request to:', `${API_BASE}/chat/stream`);
+        console.log('Question:', question);
+
         const response = await fetch(`${API_BASE}/chat/stream`, {
           method: 'POST',
           headers: {
@@ -395,6 +398,9 @@
           },
           body: JSON.stringify({ question })
         });
+
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -426,11 +432,14 @@
 
             try {
               const parsed = JSON.parse(data);
+              console.log('Parsed:', parsed);
               if (parsed.citations) {
                 citations = parsed.citations;
+                console.log('Got citations:', citations.length);
               } else if (parsed.token) {
                 fullText += parsed.token;
                 botMsg.textContent = fullText;
+                console.log('Token added, fullText length:', fullText.length);
                 messages.scrollTop = messages.scrollHeight;
               }
             } catch (e) {
