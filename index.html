@@ -499,6 +499,7 @@
       addTypingIndicator();
 
       try {
+        console.log('[CHAT] Sending request...');
         const response = await fetch(`${API_BASE}/chat/stream`, {
           method: 'POST',
           headers: {
@@ -507,6 +508,8 @@
           },
           body: JSON.stringify({ question })
         });
+
+        console.log('[CHAT] Response status:', response.status);
 
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
@@ -522,9 +525,15 @@
         let citations = null;
         let buffer = '';
         let lastRenderTime = Date.now();
+        let tokenCount = 0;
+
+        console.log('[CHAT] Starting stream read...');
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            console.log('[CHAT] Stream complete. Total tokens:', tokenCount);
+            break;
+          }
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n\n');
@@ -542,6 +551,11 @@
                 citations = parsed.citations;
               } else if (parsed.token) {
                 fullText += parsed.token;
+                tokenCount++;
+
+                if (tokenCount === 1) {
+                  console.log('[CHAT] First token received');
+                }
 
                 // Render markdown every 50ms for smooth streaming
                 const now = Date.now();
@@ -553,7 +567,7 @@
                       botMsg.textContent = fullText;
                     }
                   } catch (e) {
-                    console.error('Streaming markdown error:', e);
+                    console.error('[CHAT] Streaming markdown error:', e);
                     botMsg.textContent = fullText;
                   }
                   lastRenderTime = now;
