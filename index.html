@@ -423,7 +423,7 @@
 
         removeTypingIndicator();
         const botMsg = addMessage('', 'bot');
-        debug(`Bot bubble created`);
+        debug(`Bot bubble: ${botMsg ? 'OK' : 'NULL'}, tag=${botMsg?.tagName}`);
 
         let fullText = '';
         let citations = null;
@@ -455,10 +455,17 @@
                 debug(`Citations: ${citations.length}`);
               } else if (parsed.token) {
                 fullText += parsed.token;
-                botMsg.textContent = fullText;
                 tokenCount++;
-                if (tokenCount % 10 === 0) {
-                  debug(`Tokens: ${tokenCount}, chars: ${fullText.length}`);
+
+                // Try setting text content
+                if (botMsg && botMsg.textContent !== undefined) {
+                  botMsg.textContent = fullText;
+                } else {
+                  debug(`ERROR: botMsg invalid!`);
+                }
+
+                if (tokenCount === 1 || tokenCount % 20 === 0) {
+                  debug(`Token ${tokenCount}: "${parsed.token}" (total: ${fullText.length} chars)`);
                 }
                 messages.scrollTop = messages.scrollHeight;
               }
