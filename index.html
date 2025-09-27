@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ClikDone AI Assistant</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
   <style>
     * {
       margin: 0;
@@ -125,6 +126,90 @@
       background: #f0f0f0;
       color: #333;
       border-bottom-left-radius: 4px;
+    }
+
+    .message-bubble h1, .message-bubble h2, .message-bubble h3 {
+      margin-top: 16px;
+      margin-bottom: 8px;
+      color: #0F3D5C;
+    }
+
+    .message-bubble h1 { font-size: 1.5rem; }
+    .message-bubble h2 { font-size: 1.3rem; }
+    .message-bubble h3 { font-size: 1.1rem; }
+    .message-bubble h4 { font-size: 1rem; font-weight: 600; margin-top: 12px; margin-bottom: 6px; }
+
+    .message-bubble ul, .message-bubble ol {
+      margin-left: 20px;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+
+    .message-bubble li {
+      margin-bottom: 4px;
+    }
+
+    .message-bubble p {
+      margin-bottom: 8px;
+    }
+
+    .message-bubble strong {
+      font-weight: 600;
+      color: #0F3D5C;
+    }
+
+    .message-bubble code {
+      background: #e8e8e8;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+
+    .message-bubble pre {
+      background: #2d2d2d;
+      color: #f8f8f8;
+      padding: 12px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+
+    .message-bubble pre code {
+      background: none;
+      color: inherit;
+      padding: 0;
+    }
+
+    .message-bubble hr {
+      border: none;
+      border-top: 1px solid #ddd;
+      margin: 16px 0;
+    }
+
+    .copy-btn {
+      background: #2FAF7D;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      margin-top: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: #26a069;
+      transform: translateY(-1px);
+    }
+
+    .copy-btn:active {
+      transform: translateY(0);
+    }
+
+    .copy-btn.copied {
+      background: #0F3D5C;
     }
 
     .citations {
@@ -284,7 +369,6 @@
     </div>
 
     <div class="chat-area">
-      <div id="debug-panel" style="position:fixed;top:10px;left:10px;background:yellow;padding:5px;font-size:11px;max-width:300px;z-index:999999;border:2px solid red;"></div>
       <div class="messages" id="messages">
         <div class="welcome">
           <h2>How can I help you today?</h2>
@@ -326,20 +410,8 @@
     const messages = document.getElementById('messages');
     const input = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
-    const debugPanel = document.getElementById('debug-panel');
 
     let isFirstMessage = true;
-    let debugLog = [];
-
-    function debug(msg) {
-      debugLog.push(msg);
-      if (debugPanel) {
-        debugPanel.innerHTML = debugLog.slice(-10).join('<br>');
-      }
-      console.log(msg);
-    }
-
-    debug('Script loaded v1.0.2');
 
     function clearWelcome() {
       if (isFirstMessage) {
@@ -348,7 +420,7 @@
       }
     }
 
-    function addMessage(text, type) {
+    function addMessage(text, type, isMarkdown = false) {
       clearWelcome();
       const msg = document.createElement('div');
       msg.className = `message ${type}`;
@@ -359,14 +431,36 @@
 
       const bubble = document.createElement('div');
       bubble.className = 'message-bubble';
-      bubble.textContent = text;
+
+      if (isMarkdown && type === 'bot') {
+        bubble.innerHTML = marked.parse(text);
+      } else {
+        bubble.textContent = text;
+      }
 
       msg.appendChild(label);
       msg.appendChild(bubble);
       messages.appendChild(msg);
       messages.scrollTop = messages.scrollHeight;
 
-      return bubble;
+      return { bubble, container: msg };
+    }
+
+    function addCopyButton(messageContainer, text) {
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'copy-btn';
+      copyBtn.textContent = '📋 Copy Response';
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(text).then(() => {
+          copyBtn.textContent = '✓ Copied!';
+          copyBtn.classList.add('copied');
+          setTimeout(() => {
+            copyBtn.textContent = '📋 Copy Response';
+            copyBtn.classList.remove('copied');
+          }, 2000);
+        });
+      };
+      messageContainer.appendChild(copyBtn);
     }
 
     function addTypingIndicator() {
@@ -400,8 +494,6 @@
       addTypingIndicator();
 
       try {
-        debug(`Sending: ${question}`);
-
         const response = await fetch(`${API_BASE}/chat/stream`, {
           method: 'POST',
           headers: {
@@ -411,10 +503,7 @@
           body: JSON.stringify({ question })
         });
 
-        debug(`Status: ${response.status}`);
-
         if (!response.ok) {
-          debug(`Error: HTTP ${response.status}`);
           throw new Error(`HTTP ${response.status}`);
         }
 
@@ -422,43 +511,22 @@
         const decoder = new TextDecoder();
 
         removeTypingIndicator();
-        const botMsg = addMessage('', 'bot');
-        debug(`Bot bubble: ${botMsg ? 'OK' : 'NULL'}, tag=${botMsg?.tagName}`);
+        const { bubble: botMsg, container: msgContainer } = addMessage('', 'bot', false);
 
         let fullText = '';
         let citations = null;
         let buffer = '';
-        let tokenCount = 0;
-
-        let chunkCount = 0;
+        let lastRenderTime = Date.now();
         while (true) {
           const { done, value } = await reader.read();
-          if (done) {
-            debug(`Stream done. Total tokens: ${tokenCount}`);
-            break;
-          }
+          if (done) break;
 
-          chunkCount++;
-          const chunk = decoder.decode(value, { stream: true });
-          if (chunkCount === 1) {
-            debug(`First chunk (${chunk.length} bytes): ${chunk.substring(0, 100)}`);
-          }
-
-          buffer += chunk;
+          buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n\n');
-
-          if (chunkCount <= 2) {
-            debug(`Lines after split: ${lines.length}`);
-          }
-
           buffer = lines.pop() || '';
 
           for (const line of lines) {
-            if (!line.trim()) continue;
-            if (!line.startsWith('data:')) {
-              debug(`Skip non-data line: ${line.substring(0, 50)}`);
-              continue;
-            }
+            if (!line.trim() || !line.startsWith('data:')) continue;
             const data = line.replace(/^data:\s*/, '').trim();
             if (data === '[DONE]') break;
             if (!data) continue;
@@ -467,28 +535,29 @@
               const parsed = JSON.parse(data);
               if (parsed.citations) {
                 citations = parsed.citations;
-                debug(`Citations: ${citations.length}`);
               } else if (parsed.token) {
                 fullText += parsed.token;
-                tokenCount++;
 
-                // Try setting text content
-                if (botMsg && botMsg.textContent !== undefined) {
-                  botMsg.textContent = fullText;
-                } else {
-                  debug(`ERROR: botMsg invalid!`);
+                // Render markdown every 50ms for smooth streaming
+                const now = Date.now();
+                if (now - lastRenderTime > 50) {
+                  botMsg.innerHTML = marked.parse(fullText);
+                  lastRenderTime = now;
+                  messages.scrollTop = messages.scrollHeight;
                 }
-
-                if (tokenCount === 1 || tokenCount % 20 === 0) {
-                  debug(`Token ${tokenCount}: "${parsed.token}" (total: ${fullText.length} chars)`);
-                }
-                messages.scrollTop = messages.scrollHeight;
               }
             } catch (e) {
-              debug(`Parse error: ${e.message}`);
+              console.error('Parse error:', e);
             }
           }
         }
+
+        // Final render with complete text
+        botMsg.innerHTML = marked.parse(fullText);
+        messages.scrollTop = messages.scrollHeight;
+
+        // Add copy button
+        addCopyButton(msgContainer, fullText);
 
         if (citations && citations.length > 0) {
           const citeDiv = document.createElement('div');
@@ -497,17 +566,15 @@
             .map(c => `§${c.section}`)
             .join(' • ');
           citeDiv.textContent = `📚 Sources: ${citeText}`;
-          botMsg.parentElement.appendChild(citeDiv);
+          msgContainer.appendChild(citeDiv);
         }
 
       } catch (error) {
-        debug(`CATCH ERROR: ${error.message}`);
+        console.error('Chat error:', error);
         removeTypingIndicator();
         addMessage(`Error: ${error.message}. Please try again.`, 'bot');
       }
     }
-
-    debug('Event listeners ready');
 
     sendBtn.addEventListener('click', () => {
       const question = input.value.trim();
