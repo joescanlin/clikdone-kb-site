@@ -320,11 +320,15 @@
   </div>
 
   <script>
+    console.log('ClikDone chat script loaded - version 1.0.1');
+
     const API_BASE = "https://clikdone-kb.onrender.com";
     const API_KEY = "public-browser-key-1";
     const messages = document.getElementById('messages');
     const input = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
+
+    console.log('DOM elements:', { messages, input, sendBtn });
 
     let isFirstMessage = true;
 
