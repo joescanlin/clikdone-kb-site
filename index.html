@@ -285,6 +285,7 @@
 
     <div class="chat-area">
       <div class="messages" id="messages">
+        <div id="debug-panel" style="position:fixed;top:10px;left:10px;background:yellow;padding:5px;font-size:11px;max-width:300px;z-index:999999;"></div>
         <div class="welcome">
           <h2>How can I help you today?</h2>
           <p>Ask me anything about ClikDone, or request help creating content for your business</p>
@@ -320,17 +321,25 @@
   </div>
 
   <script>
-    console.log('ClikDone chat script loaded - version 1.0.1');
-
     const API_BASE = "https://clikdone-kb.onrender.com";
     const API_KEY = "public-browser-key-1";
     const messages = document.getElementById('messages');
     const input = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
-
-    console.log('DOM elements:', { messages, input, sendBtn });
+    const debugPanel = document.getElementById('debug-panel');
 
     let isFirstMessage = true;
+    let debugLog = [];
+
+    function debug(msg) {
+      debugLog.push(msg);
+      if (debugPanel) {
+        debugPanel.innerHTML = debugLog.slice(-10).join('<br>');
+      }
+      console.log(msg);
+    }
+
+    debug('Script loaded v1.0.2');
 
     function clearWelcome() {
       if (isFirstMessage) {
@@ -391,8 +400,7 @@
       addTypingIndicator();
 
       try {
-        console.log('Sending request to:', `${API_BASE}/chat/stream`);
-        console.log('Question:', question);
+        debug(`Sending: ${question}`);
 
         const response = await fetch(`${API_BASE}/chat/stream`, {
           method: 'POST',
@@ -403,10 +411,10 @@
           body: JSON.stringify({ question })
         });
 
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
+        debug(`Status: ${response.status}`);
 
         if (!response.ok) {
+          debug(`Error: HTTP ${response.status}`);
           throw new Error(`HTTP ${response.status}`);
         }
 
@@ -415,13 +423,19 @@
 
         removeTypingIndicator();
         const botMsg = addMessage('', 'bot');
+        debug(`Bot bubble created`);
+
         let fullText = '';
         let citations = null;
         let buffer = '';
+        let tokenCount = 0;
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            debug(`Stream done. Total tokens: ${tokenCount}`);
+            break;
+          }
 
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n\n');
@@ -436,18 +450,20 @@
 
             try {
               const parsed = JSON.parse(data);
-              console.log('Parsed:', parsed);
               if (parsed.citations) {
                 citations = parsed.citations;
-                console.log('Got citations:', citations.length);
+                debug(`Citations: ${citations.length}`);
               } else if (parsed.token) {
                 fullText += parsed.token;
                 botMsg.textContent = fullText;
-                console.log('Token added, fullText length:', fullText.length);
+                tokenCount++;
+                if (tokenCount % 10 === 0) {
+                  debug(`Tokens: ${tokenCount}, chars: ${fullText.length}`);
+                }
                 messages.scrollTop = messages.scrollHeight;
               }
             } catch (e) {
-              console.error('Parse error:', e, 'Data:', data);
+              debug(`Parse error: ${e.message}`);
             }
           }
         }
@@ -463,11 +479,13 @@
         }
 
       } catch (error) {
-        console.error('Chat error:', error);
+        debug(`CATCH ERROR: ${error.message}`);
         removeTypingIndicator();
         addMessage(`Error: ${error.message}. Please try again.`, 'bot');
       }
     }
+
+    debug('Event listeners ready');
 
     sendBtn.addEventListener('click', () => {
       const question = input.value.trim();
